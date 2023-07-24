@@ -4,7 +4,7 @@ const stylus = require('stylus')
 const fs = require('fs')
 
 browserify()
-  .add('index.js')
+  .add('browser.js')
   .transform((file) => {
     let data = '';
     return through(
@@ -22,4 +22,4 @@ browserify()
   })
   .transform('uglifyify', { global: true })
   .bundle()
-  .pipe(fs.createWriteStream('dist/index.min.js'))
+  .pipe(fs.createWriteStream('dist/browser.min.js'))
