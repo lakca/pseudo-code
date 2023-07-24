@@ -1,0 +1,28 @@
+{
+  "name": "pseudo-code",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/lakca/pseudo-code.git"
+  },
+  "keywords": [
+    "markup"
+  ],
+  "author": "lakca",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lakca/pseudo-code/issues"
+  },
+  "homepage": "https://github.com/lakca/pseudo-code#readme",
+  "devDependencies": {
+    "browserify": "^17.0.0",
+    "stylus": "^0.59.0",
+    "through": "^2.3.8",
+    "uglifyify": "^5.0.2"
+  }
+}
