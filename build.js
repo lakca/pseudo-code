@@ -6,6 +6,7 @@ const fs = require('fs')
 browserify()
   .add('browser.js')
   .transform((file) => {
+    console.log(file)
     let data = '';
     return through(
       function write(buf) {

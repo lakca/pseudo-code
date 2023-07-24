@@ -1,6 +1,6 @@
 const styles = require('./inject.styl')
 const inject = require('./inject.js')
-const { parse, generate } = require('./index')
+const { parse, generate } = require('./parser.js')
 
 function pseudoCode(elements) {
   if (elements.length) {
