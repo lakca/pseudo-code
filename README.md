@@ -1,6 +1,6 @@
 # pseudo-code
 
-[example.html](https://refined-github-html-preview.kidonng.workers.dev/lakca/pseudo-code/raw/main/example.html)
+[Preview example.html](https://htmlpreview.github.io/?https://github.com/lakca/pseudo-code/blob/main/example.html)
 
 ```plain
 #Macros
