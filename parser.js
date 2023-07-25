@@ -17,6 +17,7 @@ function parse(s) {
   let last_node = null
   /** @type {LexerNode} */
   let node = null
+  let escapes = 0
   const LENGTH = s.length
   // token
   function read() {
@@ -37,12 +38,12 @@ function parse(s) {
     nodes.push(node)
     return node
   }
-  function down(type) {
-    last_node = node || last_node
-    node = { s: '', t: type, v: last_node.v + 1 }
-    nodes.push(node)
-    return node
-  }
+  // function down(type) {
+  //   last_node = node || last_node
+  //   node = { s: '', t: type, v: last_node.v + 1 }
+  //   nodes.push(node)
+  //   return node
+  // }
   function end(type) {
     if (type) {
       next(type)
@@ -50,24 +51,42 @@ function parse(s) {
     last_node = node || last_node
     node = null
   }
-  function back() {
-    last_node = node || last_node
-    node = nodes[nodes.indexOf(last_node) - 1]
-    return node
-  }
-  function up() {
-    last_node = node || last_node
-    let i = nodes.indexOf(last_node)
-    while (true) {
-      if (nodes[i].v < last_node.v) {
-        node = nodes[i]
-        return node
-      }
-    }
-  }
+  // function back() {
+  //   last_node = node || last_node
+  //   node = nodes[nodes.indexOf(last_node) - 1]
+  //   return node
+  // }
+  // function up() {
+  //   last_node = node || last_node
+  //   let i = nodes.indexOf(last_node)
+  //   while (true) {
+  //     if (nodes[i].v < last_node.v) {
+  //       node = nodes[i]
+  //       return node
+  //     }
+  //   }
+  // }
   function eat(t) {
     if (!node) next(NODE.RAW)
-    node.s += t
+    if (t === TOKEN.ESCAPE) {
+      escapes += 1
+    } else {
+      node.s += TOKEN.ESCAPE.repeat(escapes)
+      escapes = 0
+      node.s += t
+    }
+  }
+  function escaped() {
+    if (!node) next(NODE.RAW)
+    if (escapes % 2 === 0) {
+      node.s += TOKEN.ESCAPE.repeat(escapes / 2)
+      escapes = 0
+      return false
+    } else {
+      node.s += TOKEN.ESCAPE.repeat(Math.floor(escapes / 2))
+      escapes = 0
+      return true
+    }
   }
   // read
   function readDef() {
@@ -90,7 +109,7 @@ function parse(s) {
     while (read().index < LENGTH) {
       if (tryNewline()) continue
       if (token === TOKEN.RAW_END) {
-        if (got(-1) === TOKEN.ESCAPE) {
+        if (escaped()) {
           eat(token)
         } else {
           end()
@@ -109,7 +128,7 @@ function parse(s) {
         continue
       }
       if (token === TOKEN.LINK_END) {
-        if (got(-1) === TOKEN.ESCAPE) {
+        if (escaped()) {
           eat(token)
         } else {
           end(NODE.LINK_END)
@@ -128,7 +147,7 @@ function parse(s) {
         continue
       }
       if (token === TOKEN.META_END) {
-        if (got(-1) === TOKEN.ESCAPE) {
+        if (escaped()) {
           eat(token)
         } else {
           end(NODE.META_END)
@@ -144,7 +163,7 @@ function parse(s) {
     next(NODE.CODE)
     while (read().index < LENGTH) {
       if (token === TOKEN.CODE_END) {
-        if (got(-1) === TOKEN.ESCAPE) {
+        if (escaped()) {
           eat(token)
         } else {
           end(NODE.CODE_END)
@@ -160,7 +179,7 @@ function parse(s) {
     next(NODE.STRONG)
     while (read().index < LENGTH) {
       if (token === TOKEN.STRONG_END) {
-        if (got(-1) === TOKEN.ESCAPE) {
+        if (escaped()) {
           eat(token)
         } else {
           end(NODE.STRONG_END)
@@ -187,7 +206,7 @@ function parse(s) {
       if (tryCode() || tryLink() || tryMeta() || tryOr() || tryAnd() || tryRaw()) {
         continue
       }
-      if (token === TOKEN.FUNC_PARAM_SEP && got(-1) !== TOKEN.ESCAPE) {
+      if (token === TOKEN.FUNC_PARAM_SEP && !escaped()) {
         next(NODE.FUNC_PARAM_END)
         next(NODE.FUNC_PARAM_SEP)
         eat(token)
@@ -196,7 +215,7 @@ function parse(s) {
         continue
       }
       if (token === TOKEN.FUNC_END) {
-        if (got(-1) === TOKEN.ESCAPE) {
+        if (escaped()) {
           eat(token)
         } else {
           end(NODE.FUNC_PARAM_END)
@@ -218,7 +237,7 @@ function parse(s) {
         continue
       }
       if (token === TOKEN.MARK_END) {
-        if (got(-1) === TOKEN.ESCAPE) {
+        if (escaped()) {
           eat(token)
         } else {
           end(NODE.MARK_END)
@@ -233,7 +252,7 @@ function parse(s) {
   // try: check in and read
   function tryOr() {
     if (token === TOKEN.OR) {
-      if (got(-1) !== TOKEN.ESCAPE) {
+      if (!escaped()) {
         next(NODE.OR)
         eat(token)
         end()
@@ -243,7 +262,7 @@ function parse(s) {
   }
   function tryAnd() {
     if (token === TOKEN.AND) {
-      if (got(-1) !== TOKEN.ESCAPE) {
+      if (!escaped()) {
         next(NODE.AND)
         eat(token)
         end()
@@ -261,7 +280,7 @@ function parse(s) {
   }
   function tryRaw() {
     if (token === TOKEN.RAW) {
-      if (got(-1) !== TOKEN.ESCAPE) {
+      if (!escaped()) {
         return readRaw()
       }
     }
@@ -270,7 +289,7 @@ function parse(s) {
     if (token === TOKEN.DEF) {
       const last = nodes[nodes.length - 2]
       if (!node || node.t === NODE.NEWLINE || !last || (last.t === NODE.NEWLINE && node.s.trim() === '')) {
-        if (got(-1) !== TOKEN.ESCAPE) {
+        if (!escaped()) {
           return readDef()
         }
       }
@@ -278,42 +297,42 @@ function parse(s) {
   }
   function tryLink() {
     if (token === TOKEN.LINK) {
-      if (got(-1) !== TOKEN.ESCAPE) {
+      if (!escaped()) {
         return readLink()
       }
     }
   }
   function tryMeta() {
     if (token === TOKEN.META) {
-      if (got(-1) !== TOKEN.ESCAPE) {
+      if (!escaped()) {
         return readMeta()
       }
     }
   }
   function tryCode() {
     if (token === TOKEN.CODE) {
-      if (got(-1) !== TOKEN.ESCAPE) {
+      if (!escaped()) {
         return readCode()
       }
     }
   }
   function tryStrong() {
     if (token === TOKEN.STRONG) {
-      if (got(-1) !== TOKEN.ESCAPE) {
+      if (!escaped()) {
         return readStrong()
       }
     }
   }
   function tryFunc() {
     if (token === TOKEN.FUNC) {
-      if (got(-1) !== TOKEN.ESCAPE) {
+      if (!escaped()) {
         return readFunc()
       }
     }
   }
   function tryMark() {
     if (token === TOKEN.MARK) {
-      if (got(-1) !== TOKEN.ESCAPE) {
+      if (!escaped()) {
         return readMark()
       }
     }
@@ -321,30 +340,29 @@ function parse(s) {
   try {
     while (read().index < LENGTH) {
       if (token === TOKEN.RAW) {
-        tryRaw()
+        if (tryRaw()) continue
       } else if (token === TOKEN.NEWLINE) {
-        tryNewline()
+        if (tryNewline()) continue
       } else if (token === TOKEN.DEF) {
-        tryDef()
+        if (tryDef()) continue
       } else if (token === TOKEN.OR) {
-        tryOr()
+        if (tryOr()) continue
       } else if (token === TOKEN.AND) {
-        tryAnd()
+        if (tryAnd()) continue
       } else if (token === TOKEN.CODE) {
-        tryCode()
+        if (tryCode()) continue
       } else if (token === TOKEN.STRONG) {
-        tryStrong()
+        if (tryStrong()) continue
       } else if (token === TOKEN.META) {
-        tryMeta()
+        if (tryMeta()) continue
       } else if (token === TOKEN.MARK) {
-        tryMark()
+        if (tryMark()) continue
       } else if (token === TOKEN.LINK) {
-        tryLink()
+        if (tryLink()) continue
       } else if (token === TOKEN.FUNC) {
-        tryFunc()
-      } else {
-        eat(token)
+        if (tryFunc()) continue
       }
+      eat(token)
     }
   } catch (e) { console.log(JSON.stringify(nodes, null, 2)); throw e }
   return nodes
