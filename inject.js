@@ -24,27 +24,39 @@ module.exports = function inject({ parsers, options }) {
   }
 
   document.body.addEventListener('mouseover', (e) => {
-    if (e.target.classList.contains(NODE.LINK) || e.target.classList.contains(NODE.DEF)) {
+    const isLink = e.target.classList.contains(NODE.LINK)
+    const isDef = e.target.classList.contains(NODE.DEF)
+    if (isLink || isDef) {
       for (const el of e.target.closest('.PSEUDO-CODE').querySelectorAll('[href="' + e.target.getAttribute('href') + '"]')) {
         el.classList.add('hover')
       }
-      const def = options.local
-        ? e.target.closest(`[${PSEUDO_CODE}]`).querySelector(e.target.getAttribute('href'))
-        : document.body.querySelector(`[${PSEUDO_CODE}] ${e.target.getAttribute('href')}`)
-      if (def) {
-        const pseudo = def.closest(`[${PSEUDO_CODE}]`)
-        const pseudoId = pseudo[PSEUDO_CODE] || pseudo.getAttribute(PSEUDO_CODE)
-        if (parsers[pseudoId]) {
-          const nodes = []
-          for (const node of parsers[pseudoId]) {
-            if (node.t === NODE.DEF && node.s === def.id) {
-              nodes.push(node)
-            } else if (nodes.length) {
-              if (node.t === NODE.DEF) break
-              nodes.push(node)
+      if (isLink) {
+        const def = options.local
+          ? e.target.closest(`[${PSEUDO_CODE}]`).querySelector(e.target.getAttribute('href'))
+          : document.body.querySelector(`[${PSEUDO_CODE}] ${e.target.getAttribute('href')}`)
+        if (def) {
+          const pseudo = def.closest(`[${PSEUDO_CODE}]`)
+          const pseudoId = pseudo[PSEUDO_CODE] || pseudo.getAttribute(PSEUDO_CODE)
+          if (parsers[pseudoId]) {
+            const nodes = []
+            for (const node of parsers[pseudoId]) {
+              if (node.t === NODE.DEF && node.s === def.id) {
+                nodes.push(node)
+              } else if (nodes.length) {
+                if (node.t === NODE.DEF) break
+                nodes.push(node)
+              }
             }
+            // remove trailing empty lines
+            for (let i = nodes.length; i--;) {
+              if (nodes[i].t === NODE.NEWLINE || (nodes[i].t === NODE.RAW_INFER && !nodes[i].s.trim())) {
+                nodes.length -= 1
+              } else {
+                break
+              }
+            }
+            showPopup(e.target, generate(nodes))
           }
-          showPopup(e.target, generate(nodes))
         }
       }
     }
