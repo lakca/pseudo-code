@@ -3,58 +3,36 @@
   </head>
   <body>
 <pre>
-#Macros
-  `macro_rules!` [IDENTIFIER] [MacroRulesDefinition]
+#Pattern
+  / RFC-1925 /
+  `|`"?" [PatternNoTopAlt] "(" `|` [PatternNoTopAlt] ")""*"
 
-#MacroRulesDefinition
-  `{` [MacroRules] `}` | `(` [MacroRules] `)``;` | `[` [MacroRules] `]``;`
+#PatternNoTopAlt
+  / PatternWithoutRange /
+    [LiteralPattern]                              / 字面量 /
+  | [IdentifierPattern]                           / 标识符 /
+  | [WildcardPattern]                             / 通配符 /
+  | [RestPattern]                                 / 剩余模式 /
+  | [ReferencePattern]                            / 引用 /
+  | [StructPattern]                               / 结构 /
+  | [TupleStructPattern]                          / 元组结构 /
+  | [TuplePattern]                                / 元组 /
+  | [GroupedPattern]                              / 分组 /
+  | [SlicePattern]                                / 切片 /
+  | [PathPattern]                                 / 路径 /
+  | [MacroInvocation]                             / 宏调用 /
+  / RangePattern /
+  | [RangePatternBound] `..=` [RangePatternBound] / `[]` RangeInclusivePattern /
+  | `..=` [RangePatternBound]                     / <= RangeToInclusivePattern /
+  | [RangePatternBound] `..`                      / >  RangeFromPattern /
+  | [RangePatternBound] `...` [RangePatternBound] / () ObsoleteRangePattern /
 
-#MacroRules
-  [MacroRule] "("`;`[MacroRule]")""*" `;`"?"
-
-  #MacroRule
-    [MacroMatcher] `=>` [MacroTranscriber]
-
-  #MacroMatcher
-    `(` [MacroMatches] `)` | `[` [MacroMatches] `]` | `{` [MacroMatches] `}`
-
-  #MacroMatches
-    [MacroMatch] "("`,`[MacroMatch]")""*"
-
-  #MacroMatch
-      /可以直接比对纯字面量/
-      Exclude<[Token], `$` | [DELIMITER]>
-      /指定每段的匹配模式，并捕获到元变量`$MetaVariable`/
-    | `$`[MetaVariable]`: `[MacroFragmentSpecifier]
-      /如需要进行多次匹配，可以指定分隔符和匹配次数/
-    | `$`"("[MacroMatch]"+"")" [MacroRepetitionSeparator]"?" [MacroRepetitionOperator]
-    | [MacroMatcher]
-
-    /元变量的命名规则/
-    #MetaVariable
-      Exclude<[IDENTIFIER] | [KEYWORD], `crate`> | [RAW_IDENTIFIER] | `_`
-
-    #MacroFragmentSpecifier
-        `block` | `expr` | `ident` | `item` | `lifetime` | `literal` | `meta` | `pat`
-      | `pat_param` | `path` | `stmt` | `tt` | `ty` | `vis`
-
-    #MacroRepetitionSeparator
-      Exclude<[Token], [DELIMITER] | [MacroRepetitionOperator]>
-
-    #MacroRepetitionOperator
-      `*` | `+` | `?`
-
-  #DELIMITER
-    `(` | `)` | `[` | `]` | `{` | `}`
-
-#MacroTranscriber
-  [DelimTokenTree]
-
-  #DelimTokenTree
-    `(`[TokenTree]"*"`)` | `[`[TokenTree]"*"`]` | `{`[TokenTree]"*"`}`
-
-  #TokenTree
-    Exclude<[Token], [DELIMITER] | [DelimTokenTree]>
+#RangePatternBound
+    [CHAR_LITERAL]                                / 字符 /
+  | [BYTE_LITERAL]                                / 字节 /
+  | `-`"?" [INTEGER_LITERAL]                      / 整型 /
+  | `-`"?" [FLOAT_LITERAL]                        / 浮点数 /
+  | [PathExpression]                              / 路径 /
 </pre>
   </body>
   <script src="./dist/browser.min.js"></script>

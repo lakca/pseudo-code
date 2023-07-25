@@ -1,22 +1,31 @@
 const styles = require('./inject.styl')
 const inject = require('./inject.js')
 const { parse, generate } = require('./parser.js')
+const { PSEUDO_CODE, INJECT_FLAG } = require('./def')
 
-function pseudoCode(elements) {
+const parsers = {}
+
+function pseudoCode(elements, options = {}) {
   if (elements.length) {
-    let style = document.head.querySelector('style[bound-for="PSEUDO-CODE"]')
+    let style = document.head.querySelector(`style[${PSEUDO_CODE}]`)
     if (!style) {
       style = document.createElement('style')
+      style.setAttribute(PSEUDO_CODE, 'true')
       document.head.appendChild(style)
     }
     style.innerHTML = styles
   }
   for (const el of elements) {
-    el.innerHTML = generate(parse(el.innerText))
+    const nodes = parse(el.innerText)
+    el.innerHTML = generate(nodes)
+    const id = Math.random()
+    el[PSEUDO_CODE] = id
+    el.setAttribute(PSEUDO_CODE, id)
+    parsers[id] = nodes
   }
-  if (!window._INJECT_PSEUDO_CODE_) {
-    inject()
-    window._INJECT_PSEUDO_CODE_ = true
+  if (!window[INJECT_FLAG]) {
+    inject({ parsers, options })
+    window[INJECT_FLAG] = true
   }
 }
 
