@@ -1,4 +1,4 @@
-const { NODE, TOKEN, SEQ } = require('./def')
+const { NODE, TOKEN, ENTITY_NODE_TOKEN } = require('./def')
 
 /**
  * @typedef LexerNode
@@ -18,6 +18,7 @@ function parse(s) {
   /** @type {LexerNode} */
   let node = null
   let escapes = 0
+  let spaces = 0
   const LENGTH = s.length
   // token
   function read() {
@@ -67,7 +68,7 @@ function parse(s) {
   //   }
   // }
   function eat(t) {
-    if (!node) next(NODE.RAW)
+    if (!node) next(NODE.RAW_INFER)
     if (t === TOKEN.ESCAPE) {
       escapes += 1
     } else {
@@ -76,8 +77,9 @@ function parse(s) {
       node.s += t
     }
   }
-  function escaped() {
-    if (!node) next(NODE.RAW)
+  function eatEscape() {
+    if (!node) next(NODE.RAW_INFER)
+    spaces += Math.floor(escapes / 2)
     if (escapes % 2 === 0) {
       node.s += TOKEN.ESCAPE.repeat(escapes / 2)
       escapes = 0
@@ -88,6 +90,20 @@ function parse(s) {
       return true
     }
   }
+  function eatSpace() {
+    for (let i = nodes.length; i--;) {
+      if (nodes[i].t === NODE.NEWLINE || nodes[i].s.indexOf('\n') > -1) {
+        break
+      } else {
+        if (!ENTITY_NODE_TOKEN[nodes[i].t]) {
+          spaces += 1
+        }
+      }
+    }
+    node.s += '&nbsp'.repeat(spaces)
+    node._ = spaces
+    spaces = 0
+  }
   // read
   function readDef() {
     next(NODE.DEF)
@@ -95,7 +111,7 @@ function parse(s) {
       if (tryRaw()) continue
       if (TOKEN.SEP.indexOf(token) > -1) {
         if (tryNewline()) continue
-        next(NODE.RAW)
+        end()
         eat(token)
         return true
       } else {
@@ -109,10 +125,10 @@ function parse(s) {
     while (read().index < LENGTH) {
       if (tryNewline()) continue
       if (token === TOKEN.RAW_END) {
-        if (escaped()) {
+        if (eatEscape()) {
           eat(token)
         } else {
-          end()
+          end(NODE.RAW_END)
           return true
         }
       } else {
@@ -128,7 +144,7 @@ function parse(s) {
         continue
       }
       if (token === TOKEN.LINK_END) {
-        if (escaped()) {
+        if (eatEscape()) {
           eat(token)
         } else {
           end(NODE.LINK_END)
@@ -147,7 +163,7 @@ function parse(s) {
         continue
       }
       if (token === TOKEN.META_END) {
-        if (escaped()) {
+        if (eatEscape()) {
           eat(token)
         } else {
           end(NODE.META_END)
@@ -163,7 +179,7 @@ function parse(s) {
     next(NODE.CODE)
     while (read().index < LENGTH) {
       if (token === TOKEN.CODE_END) {
-        if (escaped()) {
+        if (eatEscape()) {
           eat(token)
         } else {
           end(NODE.CODE_END)
@@ -179,7 +195,7 @@ function parse(s) {
     next(NODE.STRONG)
     while (read().index < LENGTH) {
       if (token === TOKEN.STRONG_END) {
-        if (escaped()) {
+        if (eatEscape()) {
           eat(token)
         } else {
           end(NODE.STRONG_END)
@@ -206,7 +222,7 @@ function parse(s) {
       if (tryCode() || tryLink() || tryMeta() || tryOr() || tryAnd() || tryRaw()) {
         continue
       }
-      if (token === TOKEN.FUNC_PARAM_SEP && !escaped()) {
+      if (token === TOKEN.FUNC_PARAM_SEP && !eatEscape()) {
         next(NODE.FUNC_PARAM_END)
         next(NODE.FUNC_PARAM_SEP)
         eat(token)
@@ -215,7 +231,7 @@ function parse(s) {
         continue
       }
       if (token === TOKEN.FUNC_END) {
-        if (escaped()) {
+        if (eatEscape()) {
           eat(token)
         } else {
           end(NODE.FUNC_PARAM_END)
@@ -232,12 +248,13 @@ function parse(s) {
   }
   function readMark() {
     next(NODE.MARK)
+    eatSpace()
     while (read().index < LENGTH) {
-      if (tryNewline() || tryCode()) {
+      if (tryNewline() || tryCode() || tryStrong() || tryLink()) {
         continue
       }
       if (token === TOKEN.MARK_END) {
-        if (escaped()) {
+        if (eatEscape()) {
           eat(token)
         } else {
           end(NODE.MARK_END)
@@ -252,7 +269,7 @@ function parse(s) {
   // try: check in and read
   function tryOr() {
     if (token === TOKEN.OR) {
-      if (!escaped()) {
+      if (!eatEscape()) {
         next(NODE.OR)
         eat(token)
         end()
@@ -262,7 +279,7 @@ function parse(s) {
   }
   function tryAnd() {
     if (token === TOKEN.AND) {
-      if (!escaped()) {
+      if (!eatEscape()) {
         next(NODE.AND)
         eat(token)
         end()
@@ -280,7 +297,7 @@ function parse(s) {
   }
   function tryRaw() {
     if (token === TOKEN.RAW) {
-      if (!escaped()) {
+      if (!eatEscape()) {
         return readRaw()
       }
     }
@@ -289,7 +306,7 @@ function parse(s) {
     if (token === TOKEN.DEF) {
       const last = nodes[nodes.length - 2]
       if (!node || node.t === NODE.NEWLINE || !last || (last.t === NODE.NEWLINE && node.s.trim() === '')) {
-        if (!escaped()) {
+        if (!eatEscape()) {
           return readDef()
         }
       }
@@ -297,95 +314,95 @@ function parse(s) {
   }
   function tryLink() {
     if (token === TOKEN.LINK) {
-      if (!escaped()) {
+      if (!eatEscape()) {
         return readLink()
       }
     }
   }
   function tryMeta() {
     if (token === TOKEN.META) {
-      if (!escaped()) {
+      if (!eatEscape()) {
         return readMeta()
       }
     }
   }
   function tryCode() {
     if (token === TOKEN.CODE) {
-      if (!escaped()) {
+      if (!eatEscape()) {
         return readCode()
       }
     }
   }
   function tryStrong() {
     if (token === TOKEN.STRONG) {
-      if (!escaped()) {
+      if (!eatEscape()) {
         return readStrong()
       }
     }
   }
   function tryFunc() {
     if (token === TOKEN.FUNC) {
-      if (!escaped()) {
+      if (!eatEscape()) {
         return readFunc()
       }
     }
   }
   function tryMark() {
     if (token === TOKEN.MARK) {
-      if (!escaped()) {
+      if (!eatEscape()) {
         return readMark()
       }
     }
   }
-  try {
-    while (read().index < LENGTH) {
-      if (token === TOKEN.RAW) {
-        if (tryRaw()) continue
-      } else if (token === TOKEN.NEWLINE) {
-        if (tryNewline()) continue
-      } else if (token === TOKEN.DEF) {
-        if (tryDef()) continue
-      } else if (token === TOKEN.OR) {
-        if (tryOr()) continue
-      } else if (token === TOKEN.AND) {
-        if (tryAnd()) continue
-      } else if (token === TOKEN.CODE) {
-        if (tryCode()) continue
-      } else if (token === TOKEN.STRONG) {
-        if (tryStrong()) continue
-      } else if (token === TOKEN.META) {
-        if (tryMeta()) continue
-      } else if (token === TOKEN.MARK) {
-        if (tryMark()) continue
-      } else if (token === TOKEN.LINK) {
-        if (tryLink()) continue
-      } else if (token === TOKEN.FUNC) {
-        if (tryFunc()) continue
-      }
-      eat(token)
+  while (read().index < LENGTH) {
+    if (token === TOKEN.RAW) {
+      if (tryRaw()) continue
+    } else if (token === TOKEN.NEWLINE) {
+      if (tryNewline()) continue
+    } else if (token === TOKEN.DEF) {
+      if (tryDef()) continue
+    } else if (token === TOKEN.OR) {
+      if (tryOr()) continue
+    } else if (token === TOKEN.AND) {
+      if (tryAnd()) continue
+    } else if (token === TOKEN.CODE) {
+      if (tryCode()) continue
+    } else if (token === TOKEN.STRONG) {
+      if (tryStrong()) continue
+    } else if (token === TOKEN.META) {
+      if (tryMeta()) continue
+    } else if (token === TOKEN.MARK) {
+      if (tryMark()) continue
+    } else if (token === TOKEN.LINK) {
+      if (tryLink()) continue
+    } else if (token === TOKEN.FUNC) {
+      if (tryFunc()) continue
     }
-  } catch (e) { console.log(JSON.stringify(nodes, null, 2)); throw e }
+    eat(token)
+  }
   return nodes
 }
 
 function generate(nodes) {
-  return `<pre class="PSEUDO-CODE">` + nodes.reduce((v, e) => {
-    if (e.t === NODE.NEWLINE) {
-      return v + '<br/>'
-    } else if (e.t === NODE.LINK) {
-      return v + `<a class="${e.t}" href="#${e.s}">${e.s}`
-    } else if (e.t === NODE.LINK_END) {
-      return v + `</a>`
-    } else if (e.t === NODE.DEF) {
-      return v + `<a class="${e.t}" href="#${e.s}" id="${e.s}">${e.s}</a>`
+  return `<pre class="PSEUDO-CODE">` + nodes.reduce((markup, node) => {
+    if (node.t === NODE.NEWLINE) {
+      return markup + '<br/>'
+    } else if (node.t === NODE.LINK) {
+      return markup + `<a class="${node.t}" href="#${node.s}">${node.s}`
+    } else if (node.t === NODE.LINK_END) {
+      return markup + `</a>`
+    } else if (node.t === NODE.DEF) {
+      return markup + `<a class="${node.t}" href="#${node.s}" id="${node.s}">${node.s}</a>`
+    } else if (node.t === NODE.MARK) {
+      return markup + `<span class="${node.t}" spaces=${node._}>${node.s}`
     }
-    if (e.t.endsWith('_END')) {
-      return v + '</span>'
+    if (node.t.endsWith('_END')) {
+      return markup + '</span>'
     }
-    if (NODE[e.t + '_END']) {
-      return v + `<span class="${e.t}">${e.s}`
+    if (NODE[node.t + '_END']) {
+      return markup + `<span class="${node.t}">${node.s}`
     } else {
-      return v + `<span class="${e.t}">${e.s}</span>`
+      return markup + `<span class="${node.t}">${node.s}</span>`
     }
   }, '') + `</pre>`
 }

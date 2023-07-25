@@ -35,10 +35,6 @@
 //   - 标记：#
 //   - 示例：#SomeDefinition
 
-const SEQ = {
-  DEF: 0,
-}
-
 const TOKEN = {
   ESCAPE: '@',
   NEWLINE: '\n',
@@ -63,15 +59,21 @@ const TOKEN = {
 
   SEP: ' \t\n',
 }
+
 const NODE = {
   NEWLINE: 'NEWLINE',
   DEF: 'DEF',
   OR: 'OR',
+  AND: 'AND',
   RAW: 'RAW',
+  RAW_INFER: 'RAW_INFER',
+  RAW_END: 'RAW_END',
   CODE: 'CODE',
   CODE_END: 'CODE_END',
   STRONG: 'STRONG',
   STRONG_END: 'STRONG_END',
+  MARK: 'MARK',
+  MARK_END: 'MARK_END',
   META: 'META',
   META_END: 'META_END',
   LINK: 'LINK',
@@ -84,10 +86,21 @@ const NODE = {
   FUNC_PARAM_SEP: 'FUNC_PARAM_SEP',
   FUNC_RIGHT_EDGE: 'FUNC_RIGHT_EDGE',
   FUNC_END: 'FUNC_END',
-  MARK: 'MARK',
-  MARK_END: 'MARK_END',
 }
 
+const ENTITY_NODE_TOKEN = {
+  NEWLINE: true,
+  OR: true,
+  AND: true,
+  RAW_INFER: true,
+  FUNC: true,
+  FUNC_END: true,
+  FUNC_PARAM_SEP: true,
+}
+
+const PSEUDO_CODE = '_PSEUDO_CODE_'
+const INJECT_FLAG = '_INJECT_PSEUDO_CODE_'
+
 module.exports = {
-  SEQ, TOKEN, NODE,
+  TOKEN, NODE, ENTITY_NODE_TOKEN, PSEUDO_CODE, INJECT_FLAG,
 }
