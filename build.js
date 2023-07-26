@@ -2,6 +2,7 @@ const browserify = require('browserify')
 const through = require('through')
 const stylus = require('stylus')
 const fs = require('fs')
+const { PSEUDO_CODE } = require('./def')
 
 browserify()
   .add('browser.js')
@@ -14,7 +15,9 @@ browserify()
       },
       function end() {
         if (file.endsWith('.styl')) {
-          data = stylus(data).render()
+          data = stylus(data)
+            .define('PSEUDO_CODE', PSEUDO_CODE)
+            .render()
           data = 'module.exports = `' + data + '`'
         }
         this.queue(data)

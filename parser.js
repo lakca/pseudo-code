@@ -384,7 +384,7 @@ function parse(s) {
 }
 
 function generate(nodes) {
-  return `<pre class="PSEUDO-CODE">` + nodes.reduce((markup, node) => {
+  return nodes.reduce((markup, node) => {
     if (node.t === NODE.NEWLINE) {
       return markup + '<br/>'
     } else if (node.t === NODE.LINK) {
@@ -404,7 +404,7 @@ function generate(nodes) {
     } else {
       return markup + `<span class="${node.t}">${node.s}</span>`
     }
-  }, '') + `</pre>`
+  }, '')
 }
 
 module.exports = { parse, generate }

@@ -2,8 +2,8 @@
   <head>
   </head>
   <body>
-<pre>
-  #Macros
+<div>
+#Macros
   `macro_rules!` [IDENTIFIER] [MacroRulesDefinition]
 
 #MacroRulesDefinition
@@ -32,7 +32,7 @@
 
     /元变量的命名规则/
     #MetaVariable
-      Exclude<[IDENTIFIER] | [KEYWORD], `crate`> | [RAW_IDENTIFIER] | `_`
+      Exclude<[IDENTIFIER] | [KEYWORD], `crate`> | [RAW_IDENTIFIER] | `_`>
 
     #MacroFragmentSpecifier
         `block` | `expr` | `ident` | `item` | `lifetime` | `literal` | `meta` | `pat`
@@ -55,7 +55,7 @@
 
   #TokenTree
     Exclude<[Token], [DELIMITER] | [DelimTokenTree]>
-</pre>
+</div>
 <pre>
 #Pattern
   / RFC-1925 /
@@ -91,6 +91,6 @@
   </body>
   <script src="./dist/browser.min.js"></script>
   <script>
-    pseudoCode(document.body.querySelectorAll('pre'))
+    pseudoCode(document.body.querySelectorAll('*'))
   </script>
 </html>
