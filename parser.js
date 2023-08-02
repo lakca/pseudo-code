@@ -228,7 +228,7 @@ function parse(s) {
     return true
   }
   function readFunc() {
-    if (!node || node.t !== NODE.RAW) return
+    if (!node || (node.t !== NODE.RAW && node.t !== NODE.RAW_INFER)) return
     const match = node.s.match(/^(.*?)(\S+)$/)
     if (!match) return
     node.s = match[1]
@@ -406,6 +406,7 @@ function parse(s) {
 }
 
 function generate(nodes) {
+  console.log(nodes)
   return nodes.reduce((markup, node) => {
     if (node.t === NODE.NEWLINE) {
       return markup + '<br/>'
