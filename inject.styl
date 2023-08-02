@@ -1,16 +1,19 @@
 [{PSEUDO_CODE}] {
+  --pseudo-text-color #171717
   --pseudo-bg-color #f6f6f6
   --pseudo-code-color #ff2386
   --pseudo-meta-color #6e7781
   --pseudo-op-color #6e7781
   --pseudo-link-color #006bff
-  --pseudo-def-color #551a8b
-  --pseudo-fn-color #551a8b
+  --pseudo-def-color #9600dc
+  --pseudo-fn-color #007816
   --pseudo-mark-color #6e7781
   padding 1em
   border-radius 5px
   background @--pseudo-bg-color
   background var(--pseudo-bg-color)
+  color @--pseudo-text-color
+  color var(@--pseudo-text-color)
   font-size 14px
   &, * {
     font-family Fira Code, Operator Mono, Inconsolata, Hack, Droid Sans Mono, DejaVu Sans Mono, Consolas, Liberation Mono, Menlo, monospace
@@ -59,7 +62,7 @@
       color white
     }
   }
-  .FUNC_NAME {
+  .FUNC_NAME, .FUNC_LEFT_EDGE, .FUNC_RIGHT_EDGE, .FUNC_PARAM_SEP {
     color @--pseudo-fn-color
     color var(--pseudo-fn-color)
     font-style italic

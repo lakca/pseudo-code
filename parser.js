@@ -255,7 +255,7 @@ function parse(s) {
           eat(token)
         } else {
           end(NODE.FUNC_PARAM_END)
-          end(NODE.FUNC_RIGHT_EDGE)
+          next(NODE.FUNC_RIGHT_EDGE)
           eat(token)
           end(NODE.FUNC_END)
           return true
