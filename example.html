@@ -1,62 +1,64 @@
 <html>
-  <head>
-  </head>
-  <body>
-<div>
-#Macros
-  `macro_rules!` [IDENTIFIER] [MacroRulesDefinition]
 
-#MacroRulesDefinition
-  `{` [MacroRules] `}` | `(` [MacroRules] `)``;` | `[` [MacroRules] `]``;`
+<head>
+</head>
 
-#MacroRules
-  [MacroRule] "("`;`[MacroRule]")""*" `;`"?"
+<body>
+  <div>
+    #Macros
+    `macro_rules!` [IDENTIFIER] [MacroRulesDefinition]
 
-  #MacroRule
+    #MacroRulesDefinition
+    `{` [MacroRules] `}` | `(` [MacroRules] `)``;` | `[` [MacroRules] `]``;`
+
+    #MacroRules
+    [MacroRule] "("`;`[MacroRule]")""*" `;`"?"
+
+    #MacroRule
     [MacroMatcher] `=>` [MacroTranscriber]
 
-  #MacroMatcher
+    #MacroMatcher
     `(` [MacroMatches] `)` | `[` [MacroMatches] `]` | `{` [MacroMatches] `}`
 
-  #MacroMatches
+    #MacroMatches
     [MacroMatch] "("`,`[MacroMatch]")""*"
 
-  #MacroMatch
-      /可以直接比对纯字面量/
-      Exclude<[Token], `$` | [DELIMITER]>
+    #MacroMatch
+    /可以直接比对纯字面量/
+    Exclude<[Token], `$` | [DELIMITER]>
       /指定每段的匹配模式，并捕获到元变量`$MetaVariable`/
-    | `$`[MetaVariable]`: `[MacroFragmentSpecifier]
+      | `$`[MetaVariable]`: `[MacroFragmentSpecifier]
       /如需要进行多次匹配，可以指定分隔符和匹配次数/
-    | `$`"("[MacroMatch]"+"")" [MacroRepetitionSeparator]"?" [MacroRepetitionOperator]
-    | [MacroMatcher]
+      | `$`"("[MacroMatch]"+"")" [MacroRepetitionSeparator]"?" [MacroRepetitionOperator]
+      | [MacroMatcher]
 
-    /元变量的命名规则/
-    #MetaVariable
+      /元变量的命名规则/
+      #MetaVariable
       Exclude<[IDENTIFIER] | [KEYWORD], `crate`> | [RAW_IDENTIFIER] | `_`>
 
-    #MacroFragmentSpecifier
+        #MacroFragmentSpecifier
         `block` | `expr` | `ident` | `item` | `lifetime` | `literal` | `meta` | `pat`
-      | `pat_param` | `path` | `stmt` | `tt` | `ty` | `vis`
+        | `pat_param` | `path` | `stmt` | `tt` | `ty` | `vis`
 
-    #MacroRepetitionSeparator
-      Exclude<[Token], [DELIMITER] | [MacroRepetitionOperator]>
+        #MacroRepetitionSeparator
+        Exclude<[Token], [DELIMITER] | [MacroRepetitionOperator]>
 
-    #MacroRepetitionOperator
-      `*` | `+` | `?`
+          #MacroRepetitionOperator
+          `*` | `+` | `?`
 
-  #DELIMITER
-    `(` | `)` | `[` | `]` | `{` | `}`
+          #DELIMITER
+          `(` | `)` | `[` | `]` | `{` | `}`
 
-#MacroTranscriber
-  [DelimTokenTree]
+          #MacroTranscriber
+          [DelimTokenTree]
 
-  #DelimTokenTree
-    `(`[TokenTree]"*"`)` | `[`[TokenTree]"*"`]` | `{`[TokenTree]"*"`}`
+          #DelimTokenTree
+          `(`[TokenTree]"*"`)` | `[`[TokenTree]"*"`]` | `{`[TokenTree]"*"`}`
 
-  #TokenTree
-    Exclude<[Token], [DELIMITER] | [DelimTokenTree]>
-</div>
-<pre>
+          #TokenTree
+          Exclude<[Token], [DELIMITER] | [DelimTokenTree]>
+  </div>
+  <pre>
 #Pattern
   / RFC-1925 /
   `|`"?" [PatternNoTopAlt] "(" `|` [PatternNoTopAlt] ")""*"
@@ -87,10 +89,14 @@
   | `-`"?" [INTEGER_LITERAL]                      / 整型 /
   | `-`"?" [FLOAT_LITERAL]                        / 浮点数 /
   | [PathExpression]                              / 路径 /
+
+#IdentifierPattern
+  `ref`"?" `mut`"?" [IDENTIFIER] "("``@`` [PatternNoTopAlt] ")" "?"
 </pre>
-  </body>
-  <script src="./dist/browser.min.js"></script>
-  <script>
-    pseudoCode(document.body.querySelectorAll('*'))
-  </script>
+</body>
+<script src="./dist/browser.min.js"></script>
+<script>
+  pseudoCode(document.body.querySelectorAll('*'))
+</script>
+
 </html>

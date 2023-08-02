@@ -12,7 +12,7 @@ function parse(s) {
   let token = ''
   let token_cache = ''
   /** @type {LexerNode[]} */
-  let nodes = []
+  const nodes = []
   /** @type {LexerNode} */
   let last_node = null
   /** @type {LexerNode} */
@@ -26,10 +26,25 @@ function parse(s) {
     token = s[++index]
     return { index, token }
   }
+  function shadowRead() {
+    let i = index
+    return function read() {
+      return s[++i]
+    }
+  }
+  function skip(n) {
+    while (n--) read()
+  }
+  function repeated(t) {
+    let n = 1
+    const read = shadowRead()
+    while (read() === t) n++
+    return n
+  }
   function got(i) {
     return token_cache[token_cache.length + i]
   }
-  function flush() {
+  function flushCache() {
     token_cache = ''
   }
   // node
@@ -45,13 +60,6 @@ function parse(s) {
   //   nodes.push(node)
   //   return node
   // }
-  function end(type) {
-    if (type) {
-      next(type)
-    }
-    last_node = node || last_node
-    node = null
-  }
   // function back() {
   //   last_node = node || last_node
   //   node = nodes[nodes.indexOf(last_node) - 1]
@@ -67,14 +75,25 @@ function parse(s) {
   //     }
   //   }
   // }
+  function end(type) {
+    flush()
+    if (type) next(type)
+    last_node = node || last_node
+    node = null
+  }
   function eat(t) {
     if (!node) next(NODE.RAW_INFER)
     if (t === TOKEN.ESCAPE) {
       escapes += 1
     } else {
-      node.s += TOKEN.ESCAPE.repeat(escapes)
-      escapes = 0
+      flush()
       node.s += t
+    }
+  }
+  function flush() {
+    if (escapes > 0) {
+      node.s = TOKEN.ESCAPE.repeat(escapes)
+      escapes = 0
     }
   }
   function eatEscape() {
@@ -175,15 +194,16 @@ function parse(s) {
     }
     return true
   }
-  function readCode() {
+  function readCode(n) {
     next(NODE.CODE)
     while (read().index < LENGTH) {
       if (token === TOKEN.CODE_END) {
-        if (eatEscape()) {
-          eat(token)
-        } else {
+        if (repeated(TOKEN.CODE_END) >= n) {
+          skip(n - 1)
           end(NODE.CODE_END)
           return true
+        } else {
+          eat(token)
         }
       } else {
         eat(token)
@@ -291,7 +311,7 @@ function parse(s) {
     if (token === TOKEN.NEWLINE) {
       next(NODE.NEWLINE)
       end()
-      flush()
+      flushCache()
       return true
     }
   }
@@ -328,8 +348,10 @@ function parse(s) {
   }
   function tryCode() {
     if (token === TOKEN.CODE) {
+      const n = repeated(TOKEN.CODE)
+      skip(n - 1)
       if (!eatEscape()) {
-        return readCode()
+        return readCode(n)
       }
     }
   }
@@ -390,7 +412,7 @@ function generate(nodes) {
     } else if (node.t === NODE.LINK) {
       return markup + `<a class="${node.t}" href="#${node.s}">${node.s}`
     } else if (node.t === NODE.LINK_END) {
-      return markup + `</a>`
+      return markup + '</a>'
     } else if (node.t === NODE.DEF) {
       return markup + `<a class="${node.t}" href="#${node.s}" id="${node.s}">${node.s}</a>`
     } else if (node.t === NODE.MARK) {
