@@ -1,4 +1,3 @@
-
 // # 基本用法
 
 // 1. 所有的空格、换行都将保留
@@ -57,7 +56,7 @@ const TOKEN = {
   FUNC_END: '>',
   FUNC_PARAM_SEP: ',',
 
-  SEP: ' \t\n',
+  SEP: ' \t\n'
 }
 
 const NODE = {
@@ -85,7 +84,7 @@ const NODE = {
   FUNC_PARAM_END: 'FUNC_PARAM_END',
   FUNC_PARAM_SEP: 'FUNC_PARAM_SEP',
   FUNC_RIGHT_EDGE: 'FUNC_RIGHT_EDGE',
-  FUNC_END: 'FUNC_END',
+  FUNC_END: 'FUNC_END'
 }
 
 const ENTITY_NODE_TOKEN = {
@@ -95,7 +94,7 @@ const ENTITY_NODE_TOKEN = {
   RAW_INFER: true,
   FUNC: true,
   FUNC_END: true,
-  FUNC_PARAM_SEP: true,
+  FUNC_PARAM_SEP: true
 }
 
 const PSEUDO_CODE = '_PSEUDO_CODE_'
@@ -107,12 +106,12 @@ const INJECT_FLAG = '_INJECT_PSEUDO_CODE_'
  * @returns {T}
  */
 function pseudonymize(el) {
-  let id = el[PSEUDO_CODE] || el.getAttribute(PSEUDO_CODE) || Math.random().toString(32).slice(2)
+  const id = el[PSEUDO_CODE] || el.getAttribute(PSEUDO_CODE) || Math.random().toString(32).slice(2)
   el[PSEUDO_CODE] = id
   el.setAttribute(PSEUDO_CODE, id)
   return el
 }
 
 module.exports = {
-  TOKEN, NODE, ENTITY_NODE_TOKEN, PSEUDO_CODE, INJECT_FLAG, pseudonymize,
+  TOKEN, NODE, ENTITY_NODE_TOKEN, PSEUDO_CODE, INJECT_FLAG, pseudonymize
 }

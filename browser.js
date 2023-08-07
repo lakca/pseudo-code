@@ -17,16 +17,9 @@ function pseudoCode(elements, options = {}) {
   for (const el of elements) {
     const nodes = parse(el.textContent)
     const html = generate(nodes)
-    if (el.tagName === 'PRE' || el.closest('pre')) {
-      pseudonymize(el)
-      parsers[el[PSEUDO_CODE]] = nodes
-      el.innerHTML = html
-    } else {
-      const pre = pseudonymize(document.createElement('pre'))
-      parsers[pre[PSEUDO_CODE]] = nodes
-      pre.innerHTML = html
-      el.innerHTML = pre.outerHTML
-    }
+    pseudonymize(el)
+    parsers[el[PSEUDO_CODE]] = nodes
+    el.innerHTML = html
   }
   if (!window[INJECT_FLAG]) {
     inject({ parsers, options })

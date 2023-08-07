@@ -9,6 +9,7 @@ module.exports = function inject({ parsers, options }) {
   popup.style.background = '#f6f6f6'
   popup.style.borderRadius = '8px'
   popup.style.boxShadow = '0 0 10px #d6d6d6'
+  popup.style.padding = '4px 8px'
 
   Object.assign(popup.style, options.popupStyles)
 

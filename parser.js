@@ -406,7 +406,6 @@ function parse(s) {
 }
 
 function generate(nodes) {
-  console.log(nodes)
   return nodes.reduce((markup, node) => {
     if (node.t === NODE.NEWLINE) {
       return markup + '<br/>'
