@@ -1,8 +1,10 @@
-const { NODE, PSEUDO_CODE, pseudonymize } = require('./def')
+const { NODE, PSEUDO_CODE, pseudonymize, getPseudoId, getPseudo, PSEUDO_TARGET, PSEUDO } = require('./def')
 const { generate } = require('./parser')
 
 module.exports = function inject({ parsers, options }) {
+  let HIDE_POPUP_TIMEOUT = null
   const popup = pseudonymize(document.createElement('pre'))
+  popup.setAttribute(PSEUDO, 'popup')
   document.body.appendChild(popup)
   popup.style.position = 'fixed'
   popup.style.display = 'none'
@@ -13,15 +15,30 @@ module.exports = function inject({ parsers, options }) {
 
   Object.assign(popup.style, options.popupStyles)
 
-  function showPopup(target, content) {
+  function showPopup(pseudo, target, content) {
+    clearTimeout(HIDE_POPUP_TIMEOUT)
     const bounding = target.getBoundingClientRect()
+    popup.setAttribute(PSEUDO_TARGET, getPseudoId(pseudo))
     popup.innerHTML = content
     popup.style.display = 'block'
-    popup.style.left = bounding.x + bounding.width + 10 + 'px'
-    popup.style.top = bounding.y + 'px'
+    popup.style.left = bounding.x + bounding.width / 2 + 'px'
+    popup.style.top = bounding.y + 10 + 'px'
   }
   function hidePopup() {
     popup.style.display = 'none'
+  }
+  function isPopup(pseudo) {
+    return pseudo.getAttribute(PSEUDO) === 'popup'
+  }
+
+  function is(target, type) {
+    return target.getAttribute(PSEUDO) === type
+  }
+
+  function toggleHoverRelated(pseudo, href, force) {
+    for (const el of pseudo.querySelectorAll(`[href="${href}"]`)) {
+      force ? el.classList.add('hover') : el.classList.remove('hover')
+    }
   }
 
   /**
@@ -33,58 +50,62 @@ module.exports = function inject({ parsers, options }) {
       const pseudo = self.closest(`[${PSEUDO_CODE}]`)
       if (pseudo) {
         pseudo[PSEUDO_CODE] = pseudo.getAttribute(PSEUDO_CODE)
-        cb(pseudo, self, function is(type, target) {
-          return (target || self).classList.contains(type)
-        })
+        cb(pseudo, self, is.bind(null, self))
       }
     }
   }
 
   document.body.addEventListener('mouseover', (e) => {
     if (!(e.target && e.target instanceof Element)) return
-    innerPseudo(e.target, (root, self, is) => {
+    innerPseudo(e.target, (pseudo, self, is) => {
       const href = self.getAttribute('href')
       if (href && is(NODE.LINK) || is(NODE.DEF)) {
-        for (const el of root.querySelectorAll(`[href="${href}"]`)) {
-          el.classList.add('hover')
-        }
-        if (href && is(NODE.LINK)) {
-          innerPseudo(options.local ? root.querySelector(href) : document.body.querySelector(`[${PSEUDO_CODE}] ${href}`), (root, self) => {
-            if (parsers[root[PSEUDO_CODE]]) {
-              const nodes = []
-              for (const node of parsers[root[PSEUDO_CODE]]) {
-                if (node.t === NODE.DEF && node.s === self.id) {
-                  nodes.push(node)
-                } else if (nodes.length) {
-                  if (node.t === NODE.DEF) break
-                  nodes.push(node)
+        toggleHoverRelated(pseudo, href, true)
+        if (isPopup(pseudo)) {
+          toggleHoverRelated(getPseudo(pseudo.getAttribute(PSEUDO_TARGET)), href, true)
+        } else {
+          if (href && is(NODE.LINK)) {
+            innerPseudo(options.local ? pseudo.querySelector(href) : document.body.querySelector(`[${PSEUDO_CODE}] ${href}`), (pseudo, def) => {
+              const tree = parsers[getPseudoId(pseudo)]
+              if (tree) {
+                const nodes = []
+                tree.some((node, i) => {
+                  if (node.t === NODE.DEF && node.s === def.id) {
+                    nodes.push(node)
+                  } else if (nodes.length) {
+                    if (node.t === NODE.DEF) return true
+                    nodes.push(node)
+                  } return false
+                })
+                while (true) {
+                  if (nodes.pop().t === NODE.NEWLINE) break
+                }
+                if (nodes.length) {
+                  showPopup(pseudo, e.target, generate(nodes))
                 }
               }
-              // remove trailing empty lines
-              for (let i = nodes.length; i--;) {
-                if (nodes[i].t === NODE.NEWLINE || (nodes[i].t === NODE.RAW_INFER && !nodes[i].s.trim())) {
-                  nodes.length -= 1
-                } else {
-                  break
-                }
-              }
-              showPopup(e.target, generate(nodes))
-            }
-          })
+            })
+          }
         }
       }
     })
   })
   document.body.addEventListener('mouseout', (e) => {
     if (!(e.target && e.target instanceof Element)) return
-    const pseudoRoot = e.target.closest(`[${PSEUDO_CODE}]`)
-    const isLink = e.target.classList.contains(NODE.LINK)
-    const isDef = e.target.classList.contains(NODE.DEF)
-    if (pseudoRoot && (isLink || isDef)) {
-      for (const el of pseudoRoot.querySelectorAll('[href="' + e.target.getAttribute('href') + '"]')) {
+    const pseudo = e.target.closest(`[${PSEUDO_CODE}]`)
+    const isLink = is(e.target, NODE.LINK)
+    const isDef = is(e.target, NODE.DEF)
+    if (pseudo && (isLink || isDef)) {
+      const href = e.target.getAttribute('href')
+      for (const el of pseudo.querySelectorAll(`[href="${href}"]`)) {
         el.classList.remove('hover')
       }
-      hidePopup()
+      if (isPopup(pseudo)) {
+        toggleHoverRelated(getPseudo(pseudo.getAttribute(PSEUDO_TARGET)), href, false)
+      }
+      HIDE_POPUP_TIMEOUT = setTimeout(() => {
+        hidePopup()
+      }, 300)
     }
   })
 }

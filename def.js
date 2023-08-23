@@ -97,8 +97,10 @@ const ENTITY_NODE_TOKEN = {
   FUNC_PARAM_SEP: true
 }
 
-const PSEUDO_CODE = '_PSEUDO_CODE_'
 const INJECT_FLAG = '_INJECT_PSEUDO_CODE_'
+const PSEUDO_CODE = 'pseudo_code'
+const PSEUDO_TARGET = 'pseudo_target'
+const PSEUDO = 'pseudo'
 
 /**
  * @template {Element} T
@@ -112,6 +114,14 @@ function pseudonymize(el) {
   return el
 }
 
+function getPseudo(id) {
+  return document.querySelector(`[${PSEUDO_CODE}=${id}]`)
+}
+
+function getPseudoId(pseudo) {
+  return pseudo[PSEUDO_CODE] || pseudo.getAttribute(PSEUDO_CODE)
+}
+
 module.exports = {
-  TOKEN, NODE, ENTITY_NODE_TOKEN, PSEUDO_CODE, INJECT_FLAG, pseudonymize
+  TOKEN, NODE, ENTITY_NODE_TOKEN, PSEUDO_CODE, INJECT_FLAG, PSEUDO_TARGET, PSEUDO, pseudonymize, getPseudo, getPseudoId
 }

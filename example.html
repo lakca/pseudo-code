@@ -4,60 +4,155 @@
 </head>
 
 <body>
-  <div>
-    #Macros
-    `macro_rules!` [IDENTIFIER] [MacroRulesDefinition]
+  <pre>
+#Macros
+  `macro_rules!` [IDENTIFIER] [MacroRulesDefinition]
 
-    #MacroRulesDefinition
-    `{` [MacroRules] `}` | `(` [MacroRules] `)``;` | `[` [MacroRules] `]``;`
+#MacroRulesDefinition
+  `{` [MacroRules] `}` | `(` [MacroRules] `)``;` | `[` [MacroRules] `]``;`
 
-    #MacroRules
-    [MacroRule] "("`;`[MacroRule]")""*" `;`"?"
+#MacroRules
+  [MacroRule] "("`;`[MacroRule]")""*" `;`"?"
 
-    #MacroRule
+  #MacroRule
     [MacroMatcher] `=>` [MacroTranscriber]
 
-    #MacroMatcher
+  #MacroMatcher
     `(` [MacroMatches] `)` | `[` [MacroMatches] `]` | `{` [MacroMatches] `}`
 
-    #MacroMatches
+  #MacroMatch
+      /可以直接比对纯字面量/
+      Exclude<[Token], `$` | [DELIMITER]>
+      /指定每段的匹配模式，并捕获到元变量`$MetaVariable`/
+    | `$`[MetaVariable]`: `[MacroFragSpec]
+      /如需要进行多次匹配，可以指定分隔符和匹配次数/
+    | `$`"("[MacroMatch]"+"")" [MacroRepSep]"?" [MacroRepOp]
+    | [MacroMatcher]
+
+    /元变量的命名规则/
+    #MetaVariable
+      Exclude<[IDENTIFIER] | [KEYWORD], `crate`> | [RAW_IDENTIFIER] | `_`
+
+    #MacroFragSpec
+        `block` | `expr` | `ident` | `item` | `lifetime` | `literal` | `meta` | `pat`
+      | `pat_param` | `path` | `stmt` | `tt` | `ty` | `vis`
+
+    #MacroRepSep
+      Exclude<[Token], [DELIMITER] | [MacroRepOp]>
+
+    #MacroRepOp
+      `*` | `+` | `?`
+
+#MacroTranscriber
+  [DelimTokenTree]
+  </pre>
+  <pre>
+#FORMAT
+  / `{` 和 `}` 的转义分别为 `{{` 和 `}}` /
+  `{`"("[FORMAT_ARGUMENT]")""?"`:`"(""("[FORMAT_FILL]")""?"[FORMAT_ALIGN]")""?""("[FORMAT_SIGN]")""?""("[FORMAT_MIN_WIDTH]")""?""("`.`[FORMAT_PRECISION_OR_MAX_WIDTH]")""?"`}`
+
+  #FORMAT_ARGUMENT
+      [INTEGER]             / 位置参数 /
+    | [IDENTIFIER]          / 具名参数 /
+
+  #FORMAT_FILL
+    [CHAR]
+
+  #FORMAT_ALIGN
+      `<`                   / 左对齐 /
+    | `^`                   / 中心对齐 /
+    | `>`                   / 右对齐 /
+
+  #FORMAT_SIGN
+      `+`                   / 针对数字，始终打印正负号 /
+    | `-`                   / 保留字符，当前未使用 /
+    | `0`                   / 针对数字，填充 `0` /
+    | `#?`                  / `Debug`模式打印 /
+    | `#x`                  / 添加前缀`0x` /
+    | `#X`                  / 添加前缀`0x` /
+    | `#b`                  / 添加前缀`0b` /
+    | `#o`                  / 添加前缀`0o` /
+
+  #FORMAT_MIN_WIDTH
+    / 文本最小长度，或数字的小数部分的最小长度 /
+      [INTEGER]             / 具体值 /
+    | [FORMAT_ARGUMENT]`$`  / 使用参数 /
+
+  #FORMAT_PRECISION_OR_MAX_WIDTH
+    / 文本最大长度，或数字的小数部分的最大长度 /
+      [INTEGER]             / 具体值 /
+    | [FORMAT_ARGUMENT]`$`  / 使用参数 /
+    | `*`                   / 见*https://doc.rust-lang.org/stable/std/fmt/#precision* /
+                            / 如`assert_eq!(format!("{:.*}", 3, 1.2345), format!("{name:.*}", 3, name=1.2345))` /
+
+  #FORMAT_TRAIT
+    / 任何部署了如下右侧特征的值，都可以通过左侧格式进行格式化，如`println!("{:b}", 0b111)` /
+      "nothing"             / `Display` /
+    | `?`                   / `Debug`/
+    | `x?`                  / `Debug`/
+    | `X?`                  / `Debug`/
+    | `b`                   / `Binary` /
+    | `o`                   / `Octal` /
+    | `p`                   / `Pointer` /
+    | `x`                   / `LowerHex` /
+    | `X`                   / `UpperHex` /
+    | `e`                   / `LowerExp` /
+    | `E`                   / `UpperExp` /
+  </pre>
+  <pre>
+#Macros
+  `macro_rules!` [IDENTIFIER] [MacroRulesDefinition]
+
+#MacroRulesDefinition
+  `{` [MacroRules] `}` | `(` [MacroRules] `)``;` | `[` [MacroRules] `]``;`
+
+#MacroRules
+  [MacroRule] "("`;`[MacroRule]")""*" `;`"?"
+
+  #MacroRule
+    [MacroMatcher] `=>` [MacroTranscriber]
+
+  #MacroMatcher
+    `(` [MacroMatches] `)` | `[` [MacroMatches] `]` | `{` [MacroMatches] `}`
+
+  #MacroMatches
     [MacroMatch] "("`,`[MacroMatch]")""*"
 
-    #MacroMatch
-    /可以直接比对纯字面量/
-    Exclude<[Token], `$` | [DELIMITER]>
+  #MacroMatch
+      /可以直接比对纯字面量/
+      Exclude<[Token], `$` | [DELIMITER]>
       /指定每段的匹配模式，并捕获到元变量`$MetaVariable`/
-      | `$`[MetaVariable]`: `[MacroFragmentSpecifier]
+    | `$`[MetaVariable]`: `[MacroFragmentSpecifier]
       /如需要进行多次匹配，可以指定分隔符和匹配次数/
-      | `$`"("[MacroMatch]"+"")" [MacroRepetitionSeparator]"?" [MacroRepetitionOperator]
-      | [MacroMatcher]
+    | `$`"("[MacroMatch]"+"")" [MacroRepetitionSeparator]"?" [MacroRepetitionOperator]
+    | [MacroMatcher]
 
-      /元变量的命名规则/
-      #MetaVariable
-      Exclude<[IDENTIFIER] | [KEYWORD], `crate`> | [RAW_IDENTIFIER] | `_`>
+    /元变量的命名规则/
+    #MetaVariable
+      Exclude<[IDENTIFIER] | [KEYWORD], `crate`> | [RAW_IDENTIFIER] | `_`
 
-        #MacroFragmentSpecifier
+    #MacroFragmentSpecifier
         `block` | `expr` | `ident` | `item` | `lifetime` | `literal` | `meta` | `pat`
-        | `pat_param` | `path` | `stmt` | `tt` | `ty` | `vis`
+      | `pat_param` | `path` | `stmt` | `tt` | `ty` | `vis`
 
-        #MacroRepetitionSeparator
-        Exclude<[Token], [DELIMITER] | [MacroRepetitionOperator]>
+    #MacroRepetitionSeparator
+      Exclude<[Token], [DELIMITER] | [MacroRepetitionOperator]>
 
-          #MacroRepetitionOperator
-          `*` | `+` | `?`
+    #MacroRepetitionOperator
+      `*` | `+` | `?`
 
-          #DELIMITER
-          `(` | `)` | `[` | `]` | `{` | `}`
+  #DELIMITER
+    `(` | `)` | `[` | `]` | `{` | `}`
 
-          #MacroTranscriber
-          [DelimTokenTree]
+#MacroTranscriber
+  [DelimTokenTree]
 
-          #DelimTokenTree
-          `(`[TokenTree]"*"`)` | `[`[TokenTree]"*"`]` | `{`[TokenTree]"*"`}`
+  #DelimTokenTree
+    `(`[TokenTree]"*"`)` | `[`[TokenTree]"*"`]` | `{`[TokenTree]"*"`}`
 
-          #TokenTree
-          Exclude<[Token], [DELIMITER] | [DelimTokenTree]>
-  </div>
+  #TokenTree
+    Exclude<[Token], [DELIMITER] | [DelimTokenTree]>
+  </pre>
   <pre>
 #Pattern
   / RFC-1925 /
@@ -74,37 +169,37 @@
    | [ObsoleteRangePattern]
 
   #RangeInclusivePattern
-        [RangePatternBound] `..=` [RangePatternBound]
+    [RangePatternBound] `..=` [RangePatternBound]
 
   #RangeFromPattern
-        [RangePatternBound] `..`
+    [RangePatternBound] `..`
 
   #RangeToInclusivePattern
-        `..=` [RangePatternBound]
+    `..=` [RangePatternBound]
 
-  #ObsoleteRangePattern
+  #ObsoleteRangePattern / 同[RangeToInclusivePattern] /
     [RangePatternBound] `...` [RangePatternBound]
 
   #RangePatternBound
-      [CHAR_LITERAL]                                / 字符 /
-    | [BYTE_LITERAL]                                / 字节 /
-    | `-`"?" [INTEGER_LITERAL]                      / 整型 /
-    | `-`"?" [FLOAT_LITERAL]                        / 浮点数 /
-    | [PathExpression]                              / 路径 /
+      [CHAR_LITERAL]           / 字符 /
+    | [BYTE_LITERAL]           / 字节 /
+    | `-`"?" [INTEGER_LITERAL] / 整型 /
+    | `-`"?" [FLOAT_LITERAL]   / 浮点数 /
+    | [PathExpression]         / 路径 /
 
 #PatternWithoutRange
-    [LiteralPattern]                              / 字面量 /
-  | [IdentifierPattern]                           / 标识符 /
-  | [WildcardPattern]                             / 通配符 /
-  | [RestPattern]                                 / 剩余模式 /
-  | [ReferencePattern]                            / 引用 /
-  | [StructPattern]                               / 结构 /
-  | [TupleStructPattern]                          / 元组结构 /
-  | [TuplePattern]                                / 元组 /
-  | [GroupedPattern]                              / 分组 /
-  | [SlicePattern]                                / 切片 /
-  | [PathPattern]                                 / 路径 /
-  | [MacroInvocation]                             / 宏调用 /
+    [LiteralPattern]           / 字面量 /
+  | [IdentifierPattern]        / 标识符 /
+  | [WildcardPattern]          / 通配符 /
+  | [RestPattern]              / 剩余模式 /
+  | [ReferencePattern]         / 引用 /
+  | [StructPattern]            / 结构 /
+  | [TupleStructPattern]       / 元组结构 /
+  | [TuplePattern]             / 元组 /
+  | [GroupedPattern]           / 分组 /
+  | [SlicePattern]             / 切片 /
+  | [PathPattern]              / 路径 /
+  | [MacroInvocation]          / 宏调用 /
 
   #LiteralPattern
       `true` | `false`
@@ -117,8 +212,7 @@
     | `-`"?" [INTEGER_LITERAL]
     | `-`"?" [FLOAT_LITERAL]
 
-  #IdentifierPattern
-    `ref`"?" `mut`"?" [IDENTIFIER] "("`@` [PatternNoTopAlt] ")" "?"
+  #IdentifierPattern `ref`"?" `mut`"?" [IDENTIFIER] "("`@` [PatternNoTopAlt] ")" "?"
 
   #WildcardPattern
     `_`

@@ -50,7 +50,10 @@ function parse(s) {
   // node
   function next(type) {
     last_node = node || last_node
-    node = { s: '', t: type, v: last_node ? last_node.v : 0 }
+    if (last_node && last_node.t === NODE.RAW_INFER && last_node.s === '') {
+      nodes.pop()
+    }
+    node = { t: type, s: '', v: last_node ? last_node.v : 0 }
     nodes.push(node)
     return node
   }
@@ -109,6 +112,7 @@ function parse(s) {
       return true
     }
   }
+  // flush spaces to comment
   function eatSpace() {
     for (let i = nodes.length; i--;) {
       if (nodes[i].t === NODE.NEWLINE || nodes[i].s.indexOf('\n') > -1) {
@@ -159,7 +163,7 @@ function parse(s) {
   function readLink() {
     next(NODE.LINK)
     while (read().index < LENGTH) {
-      if (tryRaw() || tryCode()) {
+      if (tryRaw()) {
         continue
       }
       if (token === TOKEN.LINK_END) {
@@ -214,6 +218,9 @@ function parse(s) {
   function readStrong() {
     next(NODE.STRONG)
     while (read().index < LENGTH) {
+      if (tryRaw()) {
+        continue
+      }
       if (token === TOKEN.STRONG_END) {
         if (eatEscape()) {
           eat(token)
@@ -268,9 +275,10 @@ function parse(s) {
   }
   function readMark() {
     next(NODE.MARK)
+    spaces -= 1
     eatSpace()
     while (read().index < LENGTH) {
-      if (tryNewline() || tryCode() || tryStrong() || tryLink()) {
+      if (tryNewline() || tryCode() || tryStrong() || tryLink() || tryRaw()) {
         continue
       }
       if (token === TOKEN.MARK_END) {
@@ -406,27 +414,28 @@ function parse(s) {
 }
 
 function generate(nodes) {
-  return nodes.reduce((markup, node) => {
+  return nodes.reduce((markup, node, i) => {
     if (node.t === NODE.NEWLINE) {
-      return markup + '<br/>'
+      const last = nodes[i - 1]
+      return markup + `${last && last.t === NODE.NEWLINE ? '<br/>' : ''}</span><span pseudo="LINE">`
     } else if (node.t === NODE.LINK) {
-      return markup + `<a class="${node.t}" href="#${node.s}">${node.s}`
+      return markup + `<a pseudo="${node.t}" href="#${node.s}">${node.s}`
     } else if (node.t === NODE.LINK_END) {
       return markup + '</a>'
     } else if (node.t === NODE.DEF) {
-      return markup + `<a class="${node.t}" href="#${node.s}" id="${node.s}">${node.s}</a>`
+      return markup + `<a pseudo="${node.t}" href="#${node.s}" id="${node.s}">${node.s}</a>`
     } else if (node.t === NODE.MARK) {
-      return markup + `<span class="${node.t}" spaces=${node._}>${node.s}`
+      return markup + `<span pseudo="${node.t}" spaces=${node._}>${node.s}`
     }
     if (node.t.endsWith('_END')) {
       return markup + '</span>'
     }
     if (NODE[node.t + '_END']) {
-      return markup + `<span class="${node.t}">${node.s}`
+      return markup + `<span pseudo="${node.t}">${node.s}`
     } else {
-      return markup + `<span class="${node.t}">${node.s}</span>`
+      return markup + `<span pseudo="${node.t}">${node.s}</span>`
     }
-  }, '')
+  }, '<span pseudo="LINE">') + '</span>'
 }
 
 module.exports = { parse, generate }

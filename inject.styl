@@ -5,6 +5,7 @@
   color var(@--pseudo-text-color)
   font-size 14px
   line-height 1.5
+  white-space: pre;
   --pseudo-text-color #171717
   --pseudo-bg-color #f6f6f6
   --pseudo-code-color #ff2386
@@ -14,29 +15,35 @@
   --pseudo-def-color #9600dc
   --pseudo-fn-color #007816
   --pseudo-mark-color #6e7781
+  &[{PSEUDO}=popup]:hover {
+    display: block!important;
+  }
   &
   * {
     font-family Fira Code, Operator Mono, Inconsolata, Hack, Droid Sans Mono, DejaVu Sans Mono, Consolas, Liberation Mono, Menlo, monospace
   }
-  .CODE {
+  [{PSEUDO}=LINE] {
+    display: block;
+  }
+  [{PSEUDO}=CODE] {
     color @--pseudo-code-color
     color var(--pseudo-code-color)
     font-family Fira Code, Operator Mono, Inconsolata, Hack, Droid Sans Mono, DejaVu Sans Mono, Consolas, Liberation Mono, Menlo, monospace
   }
-  .STRONG {
+  [{PSEUDO}=STRONG] {
     font-weight bold
   }
-  .META {
+  [{PSEUDO}=META] {
     color @--pseudo-meta-color
     color var(--pseudo-meta-color)
     font-style italic
   }
-  .OR
-  .AND {
+  [{PSEUDO}=OR]
+  [{PSEUDO}=AND] {
     color @--pseudo-op-color
     color var(--pseudo-op-color)
   }
-  .LINK {
+  [{PSEUDO}=LINK] {
     color @--pseudo-link-color
     color var(--pseudo-link-color)
     text-decoration none
@@ -49,7 +56,7 @@
       color white
     }
   }
-  .DEF {
+  [{PSEUDO}=DEF] {
     color @--pseudo-def-color
     color var(--pseudo-def-color)
     text-decoration none
@@ -61,15 +68,15 @@
       color white
     }
   }
-  .FUNC_NAME
-  .FUNC_LEFT_EDGE
-  .FUNC_RIGHT_EDGE
-  .FUNC_PARAM_SEP {
+  [{PSEUDO}=FUNC_NAME]
+  [{PSEUDO}=FUNC_LEFT_EDGE]
+  [{PSEUDO}=FUNC_RIGHT_EDGE]
+  [{PSEUDO}=FUNC_PARAM_SEP] {
     color @--pseudo-fn-color
     color var(--pseudo-fn-color)
     font-style italic
   }
-  .MARK {
+  [{PSEUDO}=MARK] {
     color @--pseudo-mark-color
     color var(--pseudo-mark-color)
     font-weight normal
